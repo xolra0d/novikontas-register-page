@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/xolra0d/novikontas-register-page/backend/shared/pkg/middleware"
+	"github.com/xolra0d/novikontas-register-page/shared/pkg/middleware"
 )
 
 func RunServer(mux *http.ServeMux, csrf, cors middleware.Middleware, logger *slog.Logger, runningAddr string, shutdownTimeout time.Duration) {

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/rs/cors"
-	"github.com/xolra0d/novikontas-register-page/backend/shared/pkg/api"
+	"github.com/xolra0d/novikontas-register-page/shared/pkg/api"
 )
 
 type Middleware func(http.Handler) http.Handler

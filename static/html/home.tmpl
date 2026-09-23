@@ -1,0 +1,55 @@
+{{ define "main" }}
+<section class="section courses-section">
+    <div class="container">
+        <div class="courses-header mb-6">
+            <div>
+                <h1 class="title is-2 mb-2">Available Training Courses</h1>
+                <p class="subtitle is-6 has-text-grey">Professional training and certification for maritime personnel.</p>
+            </div>
+            <div class="course-count">
+                <span class="course-count-number">{{ len .Courses }}</span>
+                <span class="course-count-label">COURSES</span>
+            </div>
+        </div>
+        <div class="columns is-multiline">
+            {{ range .Courses }}
+            <div class="column is-one-third-desktop is-half-tablet">
+                <article class="card course-card">
+                    <div class="card-image">
+                        <figure class="image is-16by9 course-image">
+                            <img src="./images/{{ .Image }}" alt="{{ .Name }}">
+                            <div class="course-image-overlay"></div>
+                        </figure>
+                    </div>
+                    <div class="card-content course-content">
+                        <div class="course-heading">
+                            <a class="title is-5 course-name" href="/course/{{- .ID -}}">{{ .Name }}</a>
+                        </div>
+                        <div class="tags course-locations">
+                            {{ range .Locations }}
+                            <span class="tag location-tag">
+                                <span class="location-dot"></span>
+                                {{ . }}
+                            </span>
+                            {{ end }}
+                        </div>
+                        <div class="course-meta">
+                            <div>
+                                <p class="meta-label">COURSE FEE</p>
+                                <p class="course-price">
+                                    {{ formatPrice .Price }}<span> EUR</span>
+                                </p>
+                            </div>
+                            <a class="button is-primary course-button" href="/course/{{- .ID -}}">
+                                View Course
+                                <span class="button-arrow">→</span>
+                            </a>
+                        </div>
+                    </div>
+                </article>
+            </div>
+            {{ end }}
+        </div>
+    </div>
+</section>
+{{ end }}

@@ -1,0 +1,146 @@
+{{ define "main" }}
+<section class="section course-details-section">
+    <div class="container">
+        <!-- Back -->
+        <div class="mb-5">
+            <a href="/" class="back-link">
+                <span class="back-arrow">←</span>
+                Back to Courses
+            </a>
+        </div>
+        <div class="columns is-variable is-6">
+            <!-- Main course information -->
+            <div class="column is-8">
+                <!-- Course image -->
+                <figure class="image course-details-image mb-5">
+                    <img src="/images/{{ .Course.Image }}" alt="{{ .Course.Name }}">
+                </figure>
+                <!-- Heading -->
+                <div class="course-details-heading">
+                    <p class="eyebrow">TRAINING COURSE</p>
+                    <h1 class="title is-2 mb-3">{{ .Course.Name }}</h1>
+                    <div class="course-reference">
+                        COURSE ID <strong>#{{ .Course.ID }}</strong>
+                    </div>
+                </div>
+                <h2 class="eyebrow">Locations</h2>
+                <div class="tags course-locations">
+                    {{ range .Course.Locations }}
+                    <span class="tag location-tag">
+                        <span class="location-dot"></span>
+                        {{ . }}
+                    </span>
+                    {{ end }}
+                </div>
+                <!-- Description -->
+                <div class="course-description mt-5">
+                    <p class="details-label">COURSE DESCRIPTION</p>
+                    <div class="content is-medium">{{ safeHTML .Course.Description }}</div>
+                </div>
+            </div>
+            <!-- Purchase panel -->
+            <div class="column is-4">
+                <div class="purchase-panel">
+                    <div class="purchase-panel-header">
+                        <p class="details-label">ENROLLMENT</p>
+                        <span class="availability-indicator">
+                            {{ if .Course.Available }}
+                            <strong>Available</strong>
+                        {{ else }}
+                            <strong>Not available</strong>
+                            {{ end }}
+                        </span>
+                    </div>
+                    <div class="purchase-price">
+                        <p class="meta-label">COURSE FEE</p>
+                        <p class="price-value" id="course-price">
+                            {{- formatPrice .Course.Price -}}
+                            <span>EUR</span>
+                        </p>
+                    </div>
+                    <div class="purchase-divider"></div>
+                    <p class="purchase-note">
+                        Secure your place in this maritime training course.
+                        Course availability may vary by training location.
+                    </p>
+                    <button class="button is-primary is-fullwidth is-medium purchase-button"
+                            id="buy-btn"
+                            hx-get="/courses/{{ .Course.ID }}/enroll"
+                            hx-target="#enrollment-modal"
+                            hx-swap="innerHTML"
+                            {{ if not .Course.Available }}disabled{{ end }}
+                            hx-disabled-elt="this">
+                        {{ if .Course.Available }}
+                        <span>Enroll Now</span>
+                    {{ else }}
+                        <span>Not available</span>
+                        {{ end }}
+                        <span class="purchase-arrow">→</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="enrollment-modal"></div>
+</section>
+{{ end }}
+
+{{ define "enrollment-modal" }}
+<div class="modal is-active" role="dialog" aria-modal="true" aria-labelledby="enrollment-modal-title">
+    <div class="modal-background" onclick="this.parentElement.remove()"></div>
+    <div class="modal-card enrollment-modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title" id="enrollment-modal-title">Enroll in {{ .Course.Name }}</p>
+            <button class="delete" type="button" aria-label="Close" onclick="this.closest('.modal').remove()"></button>
+        </header>
+        <form hx-post="/courses/{{ .Course.ID }}/enroll"
+              hx-target="#enrollment-result"
+              hx-swap="innerHTML">
+            <section class="modal-card-body">
+                <div class="field">
+                    <label class="label" for="full-name">Full name <span class="has-text-danger">*</span></label>
+                    <div class="control">
+                        <input class="input" id="full-name" name="full_name" type="text" required autocomplete="name">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label" for="phone">Phone</label>
+                    <div class="control">
+                        <input class="input" id="phone" name="phone" type="tel" autocomplete="tel">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label" for="email">Email <span class="has-text-danger">*</span></label>
+                    <div class="control">
+                        <input class="input" id="email" name="email" type="email" required autocomplete="email">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label">Payment type</label>
+                    <div class="payment-options">
+                        <label class="payment-option">
+                            <input type="radio" name="payment_type" value="invoice" required>
+                            Send invoice to email
+                        </label>
+                        <label class="payment-option">
+                            <input type="radio" name="payment_type" value="pay_now">
+                            Pay now
+                        </label>
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label" for="start-date">Start date</label>
+                    <div class="control">
+                        <input class="input" id="start-date" name="start_date" type="date" required>
+                    </div>
+                </div>
+                <div id="enrollment-result"></div>
+            </section>
+            <footer class="modal-card-foot">
+                <button class="button" type="button" onclick="this.closest('.modal').remove()">Cancel</button>
+                <button class="button is-link" type="submit">Proceed</button>
+            </footer>
+        </form>
+    </div>
+</div>
+{{ end }}

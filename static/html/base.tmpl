@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <title>{{ .Title }}</title>
+        <link rel="icon" href="./favicon.ico" type="image/x-icon">
+        <link rel="stylesheet"
+              href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">
+    </head>
+    <body>
+        <main>
+            {{ template "main" . }}
+        </main>
+        <script src="https://cdn.jsdelivr.net/npm/htmx.org@4.0/dist/htmx.min.js"
+                integrity="sha256-5ITZFxqdswo5yPFuPXCdQTfzIRxln45hJYFmNQM9WT8"
+                crossorigin="anonymous"></script>
+        <style>
+    :root {
+        --navy: #102a43;
+        --navy-dark: #0b1f33;
+        --steel: #486581;
+        --muted: #829ab1;
+        --line: #d9e2ec;
+        --background: #f4f7f9;
+        --white: #ffffff;
+        --accent: #1677a8;
+    }
+
+    body {
+        background:
+            linear-gradient(
+                180deg,
+                #eef3f6 0,
+                #f7f9fa 320px,
+                #f7f9fa 100%
+            );
+        color: var(--navy);
+    }
+
+    /* ---------- Page header ---------- */
+
+    .courses-section {
+        padding-top: 3.5rem;
+        padding-bottom: 4rem;
+    }
+
+    .courses-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 2rem;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 1.5rem;
+    }
+
+    .courses-header .title {
+        color: var(--navy-dark);
+        letter-spacing: -0.02em;
+    }
+
+    .courses-header .subtitle {
+        margin-bottom: 0;
+    }
+
+    .eyebrow {
+        color: var(--accent);
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        margin-bottom: 0.45rem;
+    }
+
+    .course-count {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+        padding: 0.65rem 0.9rem;
+        border-left: 3px solid var(--accent);
+        background: rgba(255, 255, 255, 0.7);
+    }
+
+    .course-count-number {
+        color: var(--navy-dark);
+        font-size: 1.5rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .course-count-label {
+        color: var(--muted);
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+    }
+
+
+    /* ---------- Cards ---------- */
+
+    .course-card {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+
+        border: 1px solid var(--line);
+        border-radius: 4px;
+
+        background: var(--white);
+        box-shadow: 0 3px 12px rgba(16, 42, 67, 0.06);
+
+        transition:
+            transform 0.18s ease,
+            box-shadow 0.18s ease,
+            border-color 0.18s ease;
+    }
+
+    .course-card:hover {
+        transform: translateY(-4px);
+        border-color: #b8c7d4;
+        box-shadow: 0 10px 28px rgba(16, 42, 67, 0.12);
+    }
+
+
+    /* ---------- Course image ---------- */
+
+    .course-image {
+        background: var(--navy-dark);
+        overflow: hidden;
+    }
+
+    .course-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+
+        transition: transform 0.35s ease;
+    }
+
+    .course-card:hover .course-image img {
+        transform: scale(1.035);
+    }
+
+    .course-image-overlay {
+        position: absolute;
+        inset: 0;
+
+        background:
+            linear-gradient(
+                180deg,
+                rgba(11, 31, 51, 0.05) 35%,
+                rgba(11, 31, 51, 0.55) 100%
+            );
+
+        pointer-events: none;
+    }
+
+    .course-badge {
+        position: absolute;
+        left: 1rem;
+        bottom: 0.85rem;
+
+        padding: 0.3rem 0.55rem;
+
+        color: white;
+        background: rgba(11, 31, 51, 0.85);
+
+        border-left: 3px solid #3da5d9;
+
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 0.13em;
+    }
+
+
+    /* ---------- Content ---------- */
+
+    .course-content {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+
+        padding: 1.35rem;
+    }
+
+    .course-heading {
+        min-height: 5.1rem;
+    }
+
+    .course-label {
+        margin-bottom: 0.4rem;
+
+        color: var(--muted);
+
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+    }
+
+    .course-name {
+        min-height: 2.5em;
+        margin-bottom: 0 !important;
+
+        color: var(--navy-dark);
+        line-height: 1.25;
+    }
+
+
+    /* ---------- Locations ---------- */
+
+    .course-locations {
+        margin-top: 1rem;
+        margin-bottom: 1.3rem;
+        min-height: 2rem;
+    }
+
+    .location-tag {
+        height: 1.8rem;
+
+        padding-left: 0.55rem;
+        padding-right: 0.65rem;
+
+        color: var(--steel);
+        background: #edf3f7;
+
+        border: 1px solid #d8e3ea;
+        border-radius: 3px;
+
+        font-size: 0.72rem;
+        font-weight: 600;
+    }
+
+    .location-dot {
+        width: 5px;
+        height: 5px;
+
+        margin-right: 0.4rem;
+
+        background: var(--accent);
+        border-radius: 50%;
+    }
+
+
+    /* ---------- Price + button ---------- */
+
+    .course-meta {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1rem;
+
+        margin-top: auto;
+        padding-top: 1rem;
+
+        border-top: 1px solid #edf1f4;
+    }
+
+    .meta-label {
+        margin-bottom: 0.15rem;
+
+        color: var(--muted);
+
+        font-size: 0.6rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+    }
+
+    .course-price {
+        margin: 0;
+
+        color: var(--navy-dark);
+
+        font-size: 1.35rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .course-price span {
+        color: var(--steel);
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+    }
+
+    .course-button {
+        min-width: 135px;
+
+        border: none;
+        border-radius: 3px;
+
+        background: var(--navy);
+        color: white;
+
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+
+        transition:
+            background 0.15s ease,
+            transform 0.15s ease;
+    }
+
+    .course-button:hover {
+        background: var(--accent);
+        color: white;
+    }
+
+    .button-arrow {
+        margin-left: 0.55rem;
+        font-size: 1rem;
+        line-height: 0;
+    }
+
+
+    /* ---------- Responsive ---------- */
+
+    @media screen and (max-width: 768px) {
+        .courses-section {
+            padding-top: 2rem;
+        }
+
+        .courses-header {
+            align-items: flex-start;
+        }
+
+        .course-count {
+            display: none;
+        }
+    }
+
+    @media screen and (max-width: 480px) {
+        .courses-header .title {
+            font-size: 1.7rem;
+        }
+
+        .course-meta {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .course-button {
+            width: 100%;
+        }
+    }
+/* =========================================================
+   COURSE DETAILS
+   ========================================================= */
+
+.course-details-section {
+    padding-top: 2.5rem;
+    padding-bottom: 4rem;
+}
+
+
+/* ---------- Back link ---------- */
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+
+    color: #486581;
+
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+
+    transition: color 0.15s ease;
+}
+
+.back-link:hover {
+    color: #1677a8;
+}
+
+.back-arrow {
+    font-size: 1.1rem;
+    line-height: 0;
+}
+
+
+/* ---------- Main image ---------- */
+
+.course-details-image {
+    overflow: hidden;
+
+    background: #0b1f33;
+    border-radius: 4px;
+
+    box-shadow: 0 5px 20px rgba(16, 42, 67, 0.1);
+}
+
+.course-details-image img {
+    width: 100%;
+    height: 100%;
+    min-height: 380px;
+
+    object-fit: cover;
+}
+
+.course-details-overlay {
+    position: absolute;
+    inset: 0;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(11, 31, 51, 0.02) 35%,
+            rgba(11, 31, 51, 0.6) 100%
+        );
+
+    pointer-events: none;
+}
+
+.course-details-badge {
+    position: absolute;
+    left: 1.25rem;
+    bottom: 1.1rem;
+
+    padding: 0.4rem 0.65rem;
+
+    color: white;
+    background: rgba(11, 31, 51, 0.9);
+
+    border-left: 3px solid #3da5d9;
+
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+}
+
+
+/* ---------- Heading ---------- */
+
+.course-details-heading {
+    border-bottom: 1px solid #d9e2ec;
+    padding-bottom: 1.35rem;
+}
+
+.course-details-heading .title {
+    color: #0b1f33;
+    letter-spacing: -0.025em;
+}
+
+.eyebrow {
+    color: #1677a8;
+
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+}
+
+.course-reference {
+    color: #829ab1;
+
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+}
+
+.course-reference strong {
+    color: #486581;
+}
+
+
+/* ---------- Details panel ---------- */
+
+.details-panel {
+    padding: 1.15rem;
+
+    background: #f4f7f9;
+    border: 1px solid #d9e2ec;
+    border-left: 3px solid #1677a8;
+}
+
+.details-label {
+    margin-bottom: 0.65rem;
+
+    color: #829ab1;
+
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+}
+
+.details-panel .select select {
+    height: 2.8rem;
+
+    color: #102a43;
+    background: white;
+
+    border-color: #cbd5df;
+    border-radius: 3px;
+
+    font-weight: 600;
+}
+
+.details-panel .select:not(.is-multiple):not(.is-loading)::after {
+    border-color: #1677a8;
+}
+
+
+/* ---------- Description ---------- */
+
+.course-description {
+    padding-top: 0.25rem;
+}
+
+.course-description .content {
+    color: #334e68;
+    line-height: 1.75;
+}
+
+.course-description .content p {
+    white-space: pre-line;
+}
+
+
+/* ---------- Purchase panel ---------- */
+
+.purchase-panel {
+    position: sticky;
+    top: 1.5rem;
+
+    padding: 1.5rem;
+
+    background: white;
+
+    border: 1px solid #d9e2ec;
+    border-top: 4px solid #102a43;
+    border-radius: 4px;
+
+    box-shadow: 0 5px 20px rgba(16, 42, 67, 0.08);
+}
+
+.purchase-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding-bottom: 1rem;
+
+    border-bottom: 1px solid #edf1f4;
+}
+
+.purchase-panel-header .details-label {
+    margin: 0;
+}
+
+.availability-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+
+    color: #486581;
+
+    font-size: 0.58rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+}
+
+.availability-indicator span {
+    width: 6px;
+    height: 6px;
+
+    background: #3a8d5d;
+    border-radius: 50%;
+}
+
+
+/* ---------- Price ---------- */
+
+.purchase-price {
+    padding: 1.5rem 0 1.25rem;
+}
+
+.purchase-price .meta-label {
+    margin-bottom: 0.3rem;
+
+    color: #829ab1;
+
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+}
+
+.price-value {
+    margin: 0;
+
+    color: #0b1f33;
+
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.price-value span {
+    color: #486581;
+
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+}
+
+
+/* ---------- Purchase action ---------- */
+
+.purchase-divider {
+    height: 1px;
+    margin-bottom: 1.25rem;
+
+    background: #edf1f4;
+}
+
+.purchase-note {
+    margin-bottom: 1.25rem;
+
+    color: #627d98;
+
+    font-size: 0.75rem;
+    line-height: 1.6;
+}
+
+.purchase-button {
+    min-height: 3rem;
+
+    background: #3da5d9;
+    border: none;
+    border-radius: 3px;
+
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+
+    transition:
+        background 0.15s ease,
+        transform 0.15s ease;
+}
+
+.purchase-button:hover {
+    background: #1677a8;
+    color: white;
+}
+
+.purchase-button[disabled] {
+    background: #d9e2ec;
+    color: #829ab1;
+}
+
+.purchase-arrow {
+    margin-left: auto;
+
+    font-size: 1.1rem;
+}
+
+
+/* ---------- Enrollment modal ---------- */
+
+.enrollment-modal-card {
+    width: min(32rem, calc(100vw - 2rem));
+    border-radius: 4px;
+}
+
+.enrollment-modal-card .modal-card-head {
+    background: #102a43;
+}
+
+.enrollment-modal-card .modal-card-title {
+    color: white;
+    font-size: 1.1rem;
+}
+
+.enrollment-modal-card .delete {
+    flex-shrink: 0;
+}
+
+.enrollment-modal-card .modal-card-body {
+    background: #f7f9fa;
+}
+
+.enrollment-modal-card .label {
+    color: #334e68;
+    font-size: 0.75rem;
+}
+
+.enrollment-modal-card .input,
+.enrollment-modal-card .select select {
+    border-color: #cbd5df;
+    border-radius: 3px;
+}
+
+.enrollment-modal-card .input:focus,
+.enrollment-modal-card .select select:focus {
+    border-color: #1677a8;
+    box-shadow: 0 0 0 0.125em rgba(22, 119, 168, 0.15);
+}
+
+.payment-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.payment-option {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    color: #334e68;
+    font-size: 0.85rem;
+}
+
+.payment-option input {
+    accent-color: #1677a8;
+}
+
+.enrollment-modal-card .modal-card-foot {
+    justify-content: flex-end;
+    gap: 0.75rem;
+    background: white;
+}
+
+.enrollment-modal-card .button.is-link {
+    background: #3da5d9;
+}
+
+.enrollment-modal-card .button.is-link:hover {
+    background: #1677a8;
+}
+
+
+/* ---------- Additional information ---------- */
+
+.course-info-box {
+    padding: 1rem 1.15rem;
+
+    background: #f4f7f9;
+    border: 1px solid #d9e2ec;
+    border-radius: 4px;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+
+    padding: 0.65rem 0;
+
+    border-bottom: 1px solid #e4ebf0;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-row span {
+    color: #829ab1;
+
+    font-size: 0.58rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+}
+
+.info-row strong {
+    color: #334e68;
+
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-align: right;
+}
+
+
+/* ---------- Responsive ---------- */
+
+@media screen and (max-width: 1023px) {
+    .purchase-panel {
+        position: static;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .course-details-section {
+        padding-top: 1.5rem;
+    }
+
+    .course-details-image img {
+        min-height: 250px;
+    }
+
+    .course-details-heading .title {
+        font-size: 1.7rem;
+    }
+}
+
+        </style>
+    </body>
+</html>
