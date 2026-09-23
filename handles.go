@@ -71,11 +71,13 @@ func (h *Handles) CourseDetails(w http.ResponseWriter, r *http.Request) {
 	idS := r.PathValue("id")
 	id, err := strconv.ParseInt(idS, 10, 64)
 	if err != nil {
-		panic(err)
+		http.NotFound(w, r)
+		return
 	}
 	course, err := h.database.GetCourse(r.Context(), id)
 	if err != nil {
-		panic("NOO1")
+		http.NotFound(w, r)
+		return
 	}
 
 	config := CourseDetailsConfig{"T", course}

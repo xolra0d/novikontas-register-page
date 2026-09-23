@@ -20,6 +20,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/ok", h.Ping)
 	mux.Handle("GET /images/", http.StripPrefix("/images/", http.FileServer(http.FS(*cfg.ImagesFS))))
+	mux.HandleFunc("GET /favicon.ico", http.NotFound)
 	mux.HandleFunc("GET /", h.ListCourses)
 	mux.HandleFunc("GET /course/{id}", h.CourseDetails)
 	mux.HandleFunc("GET /courses/{id}/enroll", h.EnrollmentForm)
