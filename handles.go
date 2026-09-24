@@ -22,23 +22,27 @@ type Handles struct {
 	database *Database
 	logger   *slog.Logger
 
+	publicURL           string
+	stripeWebhookSecret string
+
 	HomeTemplate          *template.Template
 	CourseDetailsTemplate *template.Template
-	publicURL             string
-	stripeWebhookSecret   string
+
+	sheets *Sheets
 }
 
-func NewHandles(database *Database, logger *slog.Logger, homeTemplate *template.Template, courseDetailsTemplate *template.Template, publicURL, stripeWebhookSecret string) *Handles {
+// NewHandles creates new HTTP handles.
+func NewHandles(database *Database, logger *slog.Logger, homeTemplate *template.Template, courseDetailsTemplate *template.Template, publicURL, stripeWebhookSecret string, sheets *Sheets) *Handles {
 	return &Handles{
 		database: database, logger: logger, HomeTemplate: homeTemplate,
 		CourseDetailsTemplate: courseDetailsTemplate, publicURL: strings.TrimRight(publicURL, "/"),
-		stripeWebhookSecret: stripeWebhookSecret,
+		stripeWebhookSecret: stripeWebhookSecret, sheets: sheets,
 	}
 }
 
 // Ping handles /ok requests
 func (h *Handles) Ping(w http.ResponseWriter, _ *http.Request) {
-	const op = "main.Ping"
+	const op = "handles.Ping"
 
 	err := api.WriteJSON(w, http.StatusOK, map[string]any{"ok": true})
 	if err != nil {
@@ -49,15 +53,16 @@ func (h *Handles) Ping(w http.ResponseWriter, _ *http.Request) {
 
 // ListCourses handles / requests
 func (h *Handles) ListCourses(w http.ResponseWriter, r *http.Request) {
-	const op = "main.ListCourses"
+	const op = "handles.ListCourses"
 
 	courses, err := h.database.GetCourses(r.Context())
 	if err != nil {
-		h.logger.Error("Failed to get courses", "error", err)
+		h.logger.Error("Failed to get courses", "error", err, "op", op)
+		http.Error(w, "Failed to receive courses", http.StatusInternalServerError)
 		return
 	}
 
-	config := HomeTemplateConfig{"Demo", courses}
+	config := HomeTemplateConfig{"Courses list", courses}
 	err = h.HomeTemplate.Execute(w, &config)
 	if err != nil {
 		h.logger.Error("could not write response", "op", op, "error", err)
@@ -66,21 +71,20 @@ func (h *Handles) ListCourses(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handles) CourseDetails(w http.ResponseWriter, r *http.Request) {
-	const op = "main.ListCourses"
+	const op = "handles.CourseDetails"
 
-	idS := r.PathValue("id")
-	id, err := strconv.ParseInt(idS, 10, 64)
+	course, err := h.courseFromRequest(r)
 	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-	course, err := h.database.GetCourse(r.Context(), id)
-	if err != nil {
+		h.logger.Error("could not find course", "op", op, "error", err)
 		http.NotFound(w, r)
 		return
 	}
 
-	config := CourseDetailsConfig{"T", course}
+	config := CourseDetailsConfig{
+		Title:          course.Name,
+		Course:         course,
+		PaymentSuccess: r.URL.Query().Get("sign-up") == "success",
+	}
 	err = h.CourseDetailsTemplate.Execute(w, &config)
 	if err != nil {
 		h.logger.Error("could not write response", "op", op, "error", err)
@@ -88,29 +92,32 @@ func (h *Handles) CourseDetails(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handles) EnrollmentForm(w http.ResponseWriter, r *http.Request) {
-	const op = "main.EnrollmentForm"
+func (h *Handles) SignUpForm(w http.ResponseWriter, r *http.Request) {
+	const op = "handles.SignUpForm"
 
 	course, err := h.courseFromRequest(r)
 	if err != nil {
-		http.Error(w, "course not found", http.StatusNotFound)
+		h.logger.Error("could not find course", "op", op, "error", err)
+		http.NotFound(w, r)
 		return
 	}
 
-	err = h.CourseDetailsTemplate.ExecuteTemplate(w, "enrollment-modal", &CourseDetailsConfig{
-		Title:  "Enrollment",
+	err = h.CourseDetailsTemplate.ExecuteTemplate(w, "sign-up-modal", &CourseDetailsConfig{
+		Title:  "Sign Up",
 		Course: course,
 	})
 	if err != nil {
-		h.logger.Error("could not write enrollment form", "op", op, "error", err)
+		h.logger.Error("could not write response", "op", op, "error", err)
+		return
 	}
 }
 
-func (h *Handles) SubmitEnrollment(w http.ResponseWriter, r *http.Request) {
-	const op = "main.SubmitEnrollment"
+func (h *Handles) SubmitSignUp(w http.ResponseWriter, r *http.Request) {
+	const op = "handles.SubmitSignUp"
 
 	if err := r.ParseForm(); err != nil {
-		http.Error(w, "could not read enrollment form", http.StatusBadRequest)
+		http.Error(w, "could not read form", http.StatusBadRequest)
+		h.logger.Error("could not read form", "op", op, "error", err)
 		return
 	}
 
@@ -118,9 +125,12 @@ func (h *Handles) SubmitEnrollment(w http.ResponseWriter, r *http.Request) {
 	email := strings.TrimSpace(r.FormValue("email"))
 	paymentType := r.FormValue("payment_type")
 	startDate := strings.TrimSpace(r.FormValue("start_date"))
+	phone := strings.TrimSpace(r.FormValue("phone"))
+
 	if fullName == "" || email == "" || paymentType == "" || startDate == "" ||
 		(paymentType != "invoice" && paymentType != "pay_now") {
 		http.Error(w, "Please provide a full name, email, and payment type.", http.StatusBadRequest)
+		h.logger.Error("invalid form", "op", op)
 		return
 	}
 
@@ -131,19 +141,21 @@ func (h *Handles) SubmitEnrollment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	metadata := map[string]string{
-		"course_id":  strconv.FormatInt(course.ID, 10),
-		"start_date": startDate,
-		"full_name":  fullName,
+		"course_id":   strconv.FormatInt(course.ID, 10),
+		"course_name": course.Name,
+		"start_date":  startDate,
+		"full_name":   fullName,
+		"email":       email,
 	}
-	if phone := strings.TrimSpace(r.FormValue("phone")); phone != "" {
+	if phone != "" {
 		metadata["phone"] = phone
 	}
 
 	if paymentType == "pay_now" {
-		checkout, createErr := h.createCheckoutSession(course, email, metadata)
-		if createErr != nil {
-			h.logger.Error("could not create Stripe Checkout Session", "op", op, "error", createErr)
-			http.Error(w, "Could not start payment.", http.StatusBadGateway)
+		checkout, err := h.createCheckoutSession(course, email, metadata)
+		if err != nil {
+			h.logger.Error("could not create session", "op", op, "error", err)
+			http.Error(w, "Could not initiate payment.", http.StatusBadGateway)
 			return
 		}
 		w.Header().Set("HX-Redirect", checkout.URL)
@@ -151,27 +163,26 @@ func (h *Handles) SubmitEnrollment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sentInvoice, createErr := h.createInvoice(course, fullName, email, metadata)
-	if createErr != nil {
-		h.logger.Error("could not create Stripe invoice", "op", op, "error", createErr)
-		http.Error(w, "Could not create invoice.", http.StatusBadGateway)
+	_, err = h.createInvoice(course, fullName, email, metadata)
+	if err != nil {
+		h.logger.Error("could not initiate invoice", "op", op, "error", err)
+		http.Error(w, "Could not initiate invoice.", http.StatusBadGateway)
 		return
 	}
 
 	w.WriteHeader(http.StatusAccepted)
 	_, err = w.Write([]byte(`<div class="notification is-success is-light">The invoice was sent to your email.</div>`))
 	if err != nil {
-		h.logger.Error("could not write enrollment result", "op", op, "error", err)
+		h.logger.Error("could not write sign-up result", "op", op, "error", err)
 	}
-	_ = sentInvoice
 }
 
 func (h *Handles) createCheckoutSession(course Course, email string, metadata map[string]string) (*stripe.CheckoutSession, error) {
 	params := &stripe.CheckoutSessionParams{
 		Mode:              stripe.String(string(stripe.CheckoutSessionModePayment)),
 		CustomerEmail:     stripe.String(email),
-		SuccessURL:        stripe.String(h.publicURL + "/course/" + strconv.FormatInt(course.ID, 10) + "?enrollment=success"),
-		CancelURL:         stripe.String(h.publicURL + "/course/" + strconv.FormatInt(course.ID, 10) + "?enrollment=cancelled"),
+		SuccessURL:        stripe.String(h.publicURL + "/course/" + strconv.FormatInt(course.ID, 10) + "?sign-up=success"),
+		CancelURL:         stripe.String(h.publicURL + "/course/" + strconv.FormatInt(course.ID, 10) + "?sign-up=cancelled"),
 		ClientReferenceID: stripe.String("course-" + strconv.FormatInt(course.ID, 10) + "-" + metadata["start_date"]),
 		LineItems: []*stripe.CheckoutSessionLineItemParams{{
 			PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
@@ -189,6 +200,8 @@ func (h *Handles) createCheckoutSession(course Course, email string, metadata ma
 }
 
 func (h *Handles) createInvoice(course Course, fullName, email string, metadata map[string]string) (*stripe.Invoice, error) {
+	const op = "handles.createInvoice"
+
 	customerParams := &stripe.CustomerParams{
 		Name:     stripe.String(fullName),
 		Email:    stripe.String(email),
@@ -196,6 +209,7 @@ func (h *Handles) createInvoice(course Course, fullName, email string, metadata 
 	}
 	newCustomer, err := customer.New(customerParams)
 	if err != nil {
+		h.logger.Error("failed to create new customer", "op", op, "error", err)
 		return nil, err
 	}
 
@@ -207,6 +221,7 @@ func (h *Handles) createInvoice(course Course, fullName, email string, metadata 
 		Metadata:    metadata,
 	})
 	if err != nil {
+		h.logger.Error("failed to create new item", "op", op, "error", err)
 		return nil, err
 	}
 
@@ -219,13 +234,14 @@ func (h *Handles) createInvoice(course Course, fullName, email string, metadata 
 		Metadata:                    metadata,
 	})
 	if err != nil {
+		h.logger.Error("failed to create new invoice", "op", op, "error", err)
 		return nil, err
 	}
 	return invoice.SendInvoice(sentInvoice.ID, &stripe.InvoiceSendInvoiceParams{})
 }
 
 func (h *Handles) StripeWebhook(w http.ResponseWriter, r *http.Request) {
-	const op = "main.StripeWebhook"
+	const op = "handles.StripeWebhook"
 
 	payload, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 1<<20))
 	if err != nil {
@@ -239,17 +255,38 @@ func (h *Handles) StripeWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch event.Type {
-	case stripe.EventTypeCheckoutSessionCompleted, stripe.EventTypeInvoicePaid:
+	case stripe.EventTypeCheckoutSessionCompleted:
+		var checkout stripe.CheckoutSession
+		if err := json.Unmarshal(event.Data.Raw, &checkout); err != nil {
+			h.logger.Error("could not decode completed session", "op", op, "error", err)
+			http.Error(w, "invalid webhook object", http.StatusBadRequest)
+			return
+		}
+		if checkout.PaymentStatus == stripe.CheckoutSessionPaymentStatusPaid {
+			payment := paymentInfoFromMetadata(checkout.Metadata)
+			if err := h.sheets.AppendRecord(r.Context(), payment); err != nil {
+				h.logger.Error("could not append paid checkout to Google Sheet", "op", op, "error", err)
+				http.Error(w, "could not record payment", http.StatusInternalServerError)
+				return
+			}
+		}
+		h.logger.Info("Stripe payment completed", "op", op, "event_id", event.ID, "event_type", event.Type)
+	case stripe.EventTypeInvoicePaid:
+		var invoice stripe.Invoice
+		if err := json.Unmarshal(event.Data.Raw, &invoice); err != nil {
+			h.logger.Error("could not decode paid invoice", "op", op, "error", err)
+			http.Error(w, "invalid webhook object", http.StatusBadRequest)
+			return
+		}
+		payment := paymentInfoFromMetadata(invoice.Metadata)
+		if err := h.sheets.AppendRecord(r.Context(), payment); err != nil {
+			h.logger.Error("could not append paid invoice to Google Sheet", "op", op, "error", err)
+			http.Error(w, "could not record payment", http.StatusInternalServerError)
+			return
+		}
 		h.logger.Info("Stripe payment completed", "op", op, "event_id", event.ID, "event_type", event.Type)
 	case stripe.EventTypeCheckoutSessionExpired, stripe.EventTypeInvoicePaymentFailed:
-		h.logger.Info("Stripe payment requires attention", "op", op, "event_id", event.ID, "event_type", event.Type)
-	}
-
-	if event.Data != nil && event.Data.Raw != nil {
-		var object map[string]any
-		if err := json.Unmarshal(event.Data.Raw, &object); err != nil {
-			h.logger.Error("could not decode Stripe webhook object", "op", op, "error", err)
-		}
+		h.logger.Info("Stripe payment failed", "op", op, "event_id", event.ID, "event_type", event.Type)
 	}
 	w.WriteHeader(http.StatusOK)
 }

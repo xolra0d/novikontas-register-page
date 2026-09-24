@@ -39,8 +39,6 @@
         color: var(--navy);
     }
 
-    /* ---------- Page header ---------- */
-
     .courses-section {
         padding-top: 3.5rem;
         padding-bottom: 4rem;
@@ -96,8 +94,6 @@
     }
 
 
-    /* ---------- Cards ---------- */
-
     .course-card {
         display: flex;
         flex-direction: column;
@@ -122,8 +118,6 @@
         box-shadow: 0 10px 28px rgba(16, 42, 67, 0.12);
     }
 
-
-    /* ---------- Course image ---------- */
 
     .course-image {
         background: var(--navy-dark);
@@ -173,9 +167,6 @@
         letter-spacing: 0.13em;
     }
 
-
-    /* ---------- Content ---------- */
-
     .course-content {
         display: flex;
         flex-direction: column;
@@ -205,9 +196,6 @@
         color: var(--navy-dark);
         line-height: 1.25;
     }
-
-
-    /* ---------- Locations ---------- */
 
     .course-locations {
         margin-top: 1rem;
@@ -240,9 +228,6 @@
         background: var(--accent);
         border-radius: 50%;
     }
-
-
-    /* ---------- Price + button ---------- */
 
     .course-meta {
         display: flex;
@@ -312,9 +297,6 @@
         line-height: 0;
     }
 
-
-    /* ---------- Responsive ---------- */
-
     @media screen and (max-width: 768px) {
         .courses-section {
             padding-top: 2rem;
@@ -343,17 +325,11 @@
             width: 100%;
         }
     }
-/* =========================================================
-   COURSE DETAILS
-   ========================================================= */
-
+    
 .course-details-section {
     padding-top: 2.5rem;
     padding-bottom: 4rem;
 }
-
-
-/* ---------- Back link ---------- */
 
 .back-link {
     display: inline-flex;
@@ -377,9 +353,6 @@
     font-size: 1.1rem;
     line-height: 0;
 }
-
-
-/* ---------- Main image ---------- */
 
 .course-details-image {
     overflow: hidden;
@@ -429,9 +402,6 @@
     letter-spacing: 0.14em;
 }
 
-
-/* ---------- Heading ---------- */
-
 .course-details-heading {
     border-bottom: 1px solid #d9e2ec;
     padding-bottom: 1.35rem;
@@ -461,9 +431,6 @@
 .course-reference strong {
     color: #486581;
 }
-
-
-/* ---------- Details panel ---------- */
 
 .details-panel {
     padding: 1.15rem;
@@ -499,9 +466,6 @@
     border-color: #1677a8;
 }
 
-
-/* ---------- Description ---------- */
-
 .course-description {
     padding-top: 0.25rem;
 }
@@ -514,9 +478,6 @@
 .course-description .content p {
     white-space: pre-line;
 }
-
-
-/* ---------- Purchase panel ---------- */
 
 .purchase-panel {
     position: sticky;
@@ -567,9 +528,6 @@
     border-radius: 50%;
 }
 
-
-/* ---------- Price ---------- */
-
 .purchase-price {
     padding: 1.5rem 0 1.25rem;
 }
@@ -601,9 +559,6 @@
     font-weight: 700;
     letter-spacing: 0.06em;
 }
-
-
-/* ---------- Purchase action ---------- */
 
 .purchase-divider {
     height: 1px;
@@ -654,43 +609,41 @@
 }
 
 
-/* ---------- Enrollment modal ---------- */
-
-.enrollment-modal-card {
+.sing-up-modal-card {
     width: min(32rem, calc(100vw - 2rem));
     border-radius: 4px;
 }
 
-.enrollment-modal-card .modal-card-head {
+.sign-up-modal-card .modal-card-head {
     background: #102a43;
 }
 
-.enrollment-modal-card .modal-card-title {
+.sign-up-modal-card .modal-card-title {
     color: white;
     font-size: 1.1rem;
 }
 
-.enrollment-modal-card .delete {
+.sign-up-modal-card .delete {
     flex-shrink: 0;
 }
 
-.enrollment-modal-card .modal-card-body {
+.sign-up-modal-card .modal-card-body {
     background: #f7f9fa;
 }
 
-.enrollment-modal-card .label {
+.sign-up-modal-card .label {
     color: #334e68;
     font-size: 0.75rem;
 }
 
-.enrollment-modal-card .input,
-.enrollment-modal-card .select select {
+.sign-up-modal-card .input,
+.sign-up-modal-card .select select {
     border-color: #cbd5df;
     border-radius: 3px;
 }
 
-.enrollment-modal-card .input:focus,
-.enrollment-modal-card .select select:focus {
+.sign-up-modal-card .input:focus,
+.sign-up-modal-card .select select:focus {
     border-color: #1677a8;
     box-shadow: 0 0 0 0.125em rgba(22, 119, 168, 0.15);
 }
@@ -713,22 +666,19 @@
     accent-color: #1677a8;
 }
 
-.enrollment-modal-card .modal-card-foot {
+.sign-up-modal-card .modal-card-foot {
     justify-content: flex-end;
     gap: 0.75rem;
     background: white;
 }
 
-.enrollment-modal-card .button.is-link {
+.sign-up-modal-card .button.is-link {
     background: #3da5d9;
 }
 
-.enrollment-modal-card .button.is-link:hover {
+.sign-up-modal-card .button.is-link:hover {
     background: #1677a8;
 }
-
-
-/* ---------- Additional information ---------- */
 
 .course-info-box {
     padding: 1rem 1.15rem;
@@ -768,8 +718,6 @@
     text-align: right;
 }
 
-
-/* ---------- Responsive ---------- */
 
 @media screen and (max-width: 1023px) {
     .purchase-panel {

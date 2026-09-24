@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -15,7 +16,8 @@ func main() {
 	stripe.Key = cfg.StripeSecretKey
 	l := slog.New(logger.NewHandler(nil))
 	d := NewDatabase(cfg.PostgresURL, l)
-	h := NewHandles(d, l, cfg.HomeTemplate, cfg.CourseDetailsTemplate, cfg.PublicURL, cfg.StripeWebhookSecret)
+	s := NewSheets(context.Background(), l, cfg.GoogleCredentialsFile, cfg.GoogleSpreadsheetID, cfg.GoogleSheetRange)
+	h := NewHandles(d, l, cfg.HomeTemplate, cfg.CourseDetailsTemplate, cfg.PublicURL, cfg.StripeWebhookSecret, s)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/ok", h.Ping)
@@ -23,8 +25,8 @@ func main() {
 	mux.HandleFunc("GET /favicon.ico", http.NotFound)
 	mux.HandleFunc("GET /", h.ListCourses)
 	mux.HandleFunc("GET /course/{id}", h.CourseDetails)
-	mux.HandleFunc("GET /courses/{id}/enroll", h.EnrollmentForm)
-	mux.HandleFunc("POST /courses/{id}/enroll", h.SubmitEnrollment)
+	mux.HandleFunc("GET /courses/{id}/sign-up", h.SignUpForm)
+	mux.HandleFunc("POST /courses/{id}/sign-up", h.SubmitSignUp)
 	mux.HandleFunc("POST /stripe/webhook", h.StripeWebhook)
 
 	cors := middleware.NewCors(
@@ -35,6 +37,6 @@ func main() {
 	)
 	csrf := middleware.NewCSRF(strings.Split(cfg.AllowedOrigins, ","))
 
-	RunServer(mux, csrf, cors, l, cfg.RunningAddr, cfg.ShutdownTimeout)
+	RunServer(mux, csrf, cors, l, cfg.RunningAddr, cfg.ShutdownTimeout, d.Close)
 
 }

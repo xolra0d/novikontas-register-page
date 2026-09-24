@@ -1,2 +1,6 @@
 tmp
 .env
+credentials.json
+*.service-account.json
+token.json
+novikontas-register-page

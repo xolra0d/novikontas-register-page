@@ -39,8 +39,9 @@ type HomeTemplateConfig struct {
 var CourseDetailsTemplate string
 
 type CourseDetailsConfig struct {
-	Title  string
-	Course Course
+	Title          string
+	Course         Course
+	PaymentSuccess bool
 }
 
 type Config struct {
@@ -50,7 +51,12 @@ type Config struct {
 	// STRIPE
 	StripeSecretKey     string // Env name: `STRIPE_SECRET_KEY`.
 	StripeWebhookSecret string // Env name: `STRIPE_WEBHOOK_SECRET`.
-	PublicURL           string // Env name: `PUBLIC_URL`. Public HTTPS origin used for Stripe redirects.
+	PublicURL           string // Env name: `PUBLIC_URL`.
+
+	// GOOGLE SHEETS
+	GoogleCredentialsFile string // Env name: `GOOGLE_CREDENTIALS_FILE`.
+	GoogleSpreadsheetID   string // Env name: `GOOGLE_SPREADSHEET_ID`.
+	GoogleSheetRange      string // Env name: `GOOGLE_SHEET_RANGE`.
 
 	// HTTP
 	AllowedOrigins  string        // Env name: `ALLOWED_ORIGINS`. Origins to respond to (e.g., http://website.com:12), separated by comma. Default: none, will exit, if not set.
@@ -58,9 +64,9 @@ type Config struct {
 	ShutdownTimeout time.Duration // Env name: `SHUTDOWN_TIMEOUT`. Time for transport server to shut down in seconds. Default: 10.
 
 	// STATIC
-	HomeTemplate          *template.Template
-	CourseDetailsTemplate *template.Template
-	ImagesFS              *fs.FS
+	HomeTemplate          *template.Template // built from static files.
+	CourseDetailsTemplate *template.Template // built from static files.
+	ImagesFS              *fs.FS             // built from static files.
 }
 
 func LoadConfig() *Config {
@@ -68,6 +74,9 @@ func LoadConfig() *Config {
 	stripeSecretKey := config.GetEnvOrExit("STRIPE_SECRET_KEY")
 	stripeWebhookSecret := config.GetEnvOrExit("STRIPE_WEBHOOK_SECRET")
 	publicURL := config.GetEnvOrExit("PUBLIC_URL")
+	googleCredentialsFile := config.GetEnvOrExit("GOOGLE_CREDENTIALS_FILE")
+	googleSpreadsheetID := config.GetEnvOrExit("GOOGLE_SPREADSHEET_ID")
+	googleSheetRange := config.GetEnvOrFallback("GOOGLE_SHEET_RANGE", "Sheet1!A:E")
 	allowedOrigins := config.GetEnvOrExit("ALLOWED_ORIGINS")
 	runningAddr := config.GetEnvOrFallback("RUNNING_ADDR", ":8080")
 	shutdownTimeout := config.StringToSeconds("SHUTDOWN_TIMEOUT", config.GetEnvOrFallback("SHUTDOWN_TIMEOUT", "10"))
@@ -104,6 +113,10 @@ func LoadConfig() *Config {
 		StripeSecretKey:     stripeSecretKey,
 		StripeWebhookSecret: stripeWebhookSecret,
 		PublicURL:           publicURL,
+
+		GoogleCredentialsFile: googleCredentialsFile,
+		GoogleSpreadsheetID:   googleSpreadsheetID,
+		GoogleSheetRange:      googleSheetRange,
 
 		AllowedOrigins:  allowedOrigins,
 		RunningAddr:     runningAddr,

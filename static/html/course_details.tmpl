@@ -1,26 +1,26 @@
 {{ define "main" }}
 <section class="section course-details-section">
     <div class="container">
-        <!-- Back -->
         <div class="mb-5">
             <a href="/" class="back-link">
                 <span class="back-arrow">←</span>
                 Back to Courses
             </a>
         </div>
+        {{ if .PaymentSuccess }}
+        <div class="notification is-success is-light"
+             role="status">Payment successful! Your successfully signed-up.</div>
+        {{ end }}
         <div class="columns is-variable is-6">
-            <!-- Main course information -->
             <div class="column is-8">
-                <!-- Course image -->
                 <figure class="image course-details-image mb-5">
                     <img src="/images/{{ .Course.Image }}" alt="{{ .Course.Name }}">
                 </figure>
-                <!-- Heading -->
                 <div class="course-details-heading">
-                    <p class="eyebrow">TRAINING COURSE</p>
+                    <p class="eyebrow">Training course</p>
                     <h1 class="title is-2 mb-3">{{ .Course.Name }}</h1>
                     <div class="course-reference">
-                        COURSE ID <strong>#{{ .Course.ID }}</strong>
+                        Course ID <strong>#{{ .Course.ID }}</strong>
                     </div>
                 </div>
                 <h2 class="eyebrow">Locations</h2>
@@ -32,17 +32,15 @@
                     </span>
                     {{ end }}
                 </div>
-                <!-- Description -->
                 <div class="course-description mt-5">
-                    <p class="details-label">COURSE DESCRIPTION</p>
+                    <p class="details-label">Course description</p>
                     <div class="content is-medium">{{ safeHTML .Course.Description }}</div>
                 </div>
             </div>
-            <!-- Purchase panel -->
             <div class="column is-4">
                 <div class="purchase-panel">
                     <div class="purchase-panel-header">
-                        <p class="details-label">ENROLLMENT</p>
+                        <p class="details-label">Sign up</p>
                         <span class="availability-indicator">
                             {{ if .Course.Available }}
                             <strong>Available</strong>
@@ -65,13 +63,13 @@
                     </p>
                     <button class="button is-primary is-fullwidth is-medium purchase-button"
                             id="buy-btn"
-                            hx-get="/courses/{{ .Course.ID }}/enroll"
-                            hx-target="#enrollment-modal"
+                            hx-get="/courses/{{ .Course.ID }}/sign-up"
+                            hx-target="#sign-up-modal"
                             hx-swap="innerHTML"
                             {{ if not .Course.Available }}disabled{{ end }}
                             hx-disabled-elt="this">
                         {{ if .Course.Available }}
-                        <span>Enroll Now</span>
+                        <span>Sign Up Now</span>
                     {{ else }}
                         <span>Not available</span>
                         {{ end }}
@@ -81,26 +79,36 @@
             </div>
         </div>
     </div>
-    <div id="enrollment-modal"></div>
+    <div id="sign-up-modal"></div>
 </section>
 {{ end }}
-
-{{ define "enrollment-modal" }}
-<div class="modal is-active" role="dialog" aria-modal="true" aria-labelledby="enrollment-modal-title">
+{{ define "sign-up-modal" }}
+<div class="modal is-active"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="sign-up-modal-title">
     <div class="modal-background" onclick="this.parentElement.remove()"></div>
-    <div class="modal-card enrollment-modal-card">
+    <div class="modal-card sign-up-modal-card">
         <header class="modal-card-head">
-            <p class="modal-card-title" id="enrollment-modal-title">Enroll in {{ .Course.Name }}</p>
-            <button class="delete" type="button" aria-label="Close" onclick="this.closest('.modal').remove()"></button>
+            <p class="modal-card-title" id="sign-up-modal-title">Sign up in {{ .Course.Name }}</p>
+            <button class="delete"
+                    type="button"
+                    aria-label="Close"
+                    onclick="this.closest('.modal').remove()"></button>
         </header>
-        <form hx-post="/courses/{{ .Course.ID }}/enroll"
-              hx-target="#enrollment-result"
+        <form hx-post="/courses/{{ .Course.ID }}/sign-up"
+              hx-target="#sign-up-result"
               hx-swap="innerHTML">
             <section class="modal-card-body">
                 <div class="field">
                     <label class="label" for="full-name">Full name <span class="has-text-danger">*</span></label>
                     <div class="control">
-                        <input class="input" id="full-name" name="full_name" type="text" required autocomplete="name">
+                        <input class="input"
+                               id="full-name"
+                               name="full_name"
+                               type="text"
+                               required
+                               autocomplete="name">
                     </div>
                 </div>
                 <div class="field">
@@ -112,7 +120,12 @@
                 <div class="field">
                     <label class="label" for="email">Email <span class="has-text-danger">*</span></label>
                     <div class="control">
-                        <input class="input" id="email" name="email" type="email" required autocomplete="email">
+                        <input class="input"
+                               id="email"
+                               name="email"
+                               type="email"
+                               required
+                               autocomplete="email">
                     </div>
                 </div>
                 <div class="field">
@@ -134,10 +147,12 @@
                         <input class="input" id="start-date" name="start_date" type="date" required>
                     </div>
                 </div>
-                <div id="enrollment-result"></div>
+                <div id="sign-up-result"></div>
             </section>
             <footer class="modal-card-foot">
-                <button class="button" type="button" onclick="this.closest('.modal').remove()">Cancel</button>
+                <button class="button"
+                        type="button"
+                        onclick="this.closest('.modal').remove()">Cancel</button>
                 <button class="button is-link" type="submit">Proceed</button>
             </footer>
         </form>
