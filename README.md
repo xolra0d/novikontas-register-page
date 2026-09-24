@@ -45,7 +45,7 @@ The "fix" is in this repository.
 
 #### 4. Show it working. 
 
-TODO
+https://github.com/xolra0d/novikontas-register-page/raw/refs/heads/main/example.mp4
 
 ### 5. Hand it over.
 
